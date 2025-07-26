@@ -39,10 +39,10 @@ jobs:
           - 6379:6379
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
@@ -51,14 +51,17 @@ jobs:
           frontend/package-lock.json
 
     - name: Install Backend Dependencies
+      working-directory: ./backend
       run: |
-        cd backend
-        npm ci
+        if [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
 
     - name: Run Backend Tests
-      run: |
-        cd backend
-        npm test
+      working-directory: ./backend
+      run: npm test
       env:
         DB_HOST: localhost
         DB_NAME: taskflow_test
@@ -67,14 +70,17 @@ jobs:
         REDIS_HOST: localhost
 
     - name: Install Frontend Dependencies
+      working-directory: ./frontend
       run: |
-        cd frontend
-        npm ci
+        if [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
 
     - name: Run Frontend Tests
-      run: |
-        cd frontend
-        npm test -- --coverage --watchAll=false
+      working-directory: ./frontend
+      run: npm test -- --coverage --watchAll=false
 
     - name: Upload Coverage Reports
       uses: codecov/codecov-action@v3
@@ -97,13 +103,13 @@ jobs:
         service: [backend, frontend]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
 
     - name: Log in to Container Registry
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
@@ -121,7 +127,7 @@ jobs:
           type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build and push Docker image
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v5
       with:
         context: ./${{ matrix.service }}
         target: production
@@ -137,7 +143,7 @@ jobs:
     if: github.event_name == 'push'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
@@ -158,7 +164,7 @@ jobs:
     environment: staging
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Deploy to Staging
       run: |
@@ -172,7 +178,7 @@ jobs:
     environment: production
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Deploy to Production
       run: |
