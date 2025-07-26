@@ -27,7 +27,7 @@
         "morgan": "^1.10.0",
         "pg": "^8.11.0",
         "rate-limiter-flexible": "^2.4.1",
-        "redis": "^4.6.7",
+        "redis": "^5.6.1",
         "winston": "^3.9.0"
     },
     "devDependencies": {
