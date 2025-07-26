@@ -23,7 +23,7 @@
         "helmet": "^6.1.5",
         "joi": "^17.9.2",
         "jsonwebtoken": "^9.0.0",
-        "knex": "^2.4.2",
+        "knex": "^3.1.0",
         "morgan": "^1.10.0",
         "pg": "^8.11.0",
         "rate-limiter-flexible": "^2.4.1",
