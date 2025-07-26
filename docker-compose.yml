@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: taskflow_postgres
+    environment:
+      POSTGRES_DB: taskflow
+      POSTGRES_USER: taskuser
+      POSTGRES_PASSWORD: taskpass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/
+    ports:
+      - "5433:5432"
+    networks:
+      - taskflow_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskuser -d taskflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: taskflow_redis
+    command: redis-server --appendonly yes --requirepass redispass
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - taskflow_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      target: production
+    container_name: taskflow_backend
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_NAME=taskflow
+      - DB_USER=taskuser
+      - DB_PASSWORD=taskpass
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redispass
+      - JWT_SECRET=your-super-secret-jwt-key
+      - FRONTEND_URL=http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    networks:
+      - taskflow_network
+    volumes:
+      - ./backend/logs:/app/logs
+    restart: unless-stopped
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    container_name: taskflow_frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001/api
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - taskflow_network
+    restart: unless-stopped
+
+  # Development services
+  backend-dev:
+    build:
+      context: ./backend
+      target: development
+    container_name: taskflow_backend_dev
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    volumes:
+      - ./backend:/app:cached
+      - /app/node_modules
+    ports:
+      - "3002:3001"
+    networks:
+      - taskflow_network
+    profiles: ["dev"]
+
+  frontend-dev:
+    build:
+      context: ./frontend
+      target: development
+    container_name: taskflow_frontend_dev
+    environment:
+      - REACT_APP_API_URL=http://localhost:3002/api
+    volumes:
+      - ./frontend:/app:cached
+      - /app/node_modules
+    ports:
+      - "3003:3000"
+    networks:
+      - taskflow_network
+    profiles: ["dev"]
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  taskflow_network:
+    driver: bridge

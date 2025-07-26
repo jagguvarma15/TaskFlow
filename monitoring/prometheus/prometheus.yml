@@ -1,0 +1,43 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'taskflow-backend'
+    static_configs:
+      - targets: ['taskflow_backend:3001']
+    metrics_path: '/health'
+    scrape_interval: 30s
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['taskflow_node_exporter:9100']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['taskflow_cadvisor:8080']
+
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['taskflow_postgres:5432']
+    scrape_interval: 30s
+
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['taskflow_redis:6379']
+    scrape_interval: 30s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - taskflow_alertmanager:9093
