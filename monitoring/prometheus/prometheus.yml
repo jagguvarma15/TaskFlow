@@ -26,15 +26,16 @@ scrape_configs:
     static_configs:
       - targets: ['taskflow_cadvisor:8080']
 
-  - job_name: 'postgres-exporter'
-    static_configs:
-      - targets: ['taskflow_postgres:5432']
-    scrape_interval: 30s
+  # Note: postgres-exporter and redis-exporter would require separate exporter services
+  # - job_name: 'postgres-exporter'
+  #   static_configs:
+  #     - targets: ['postgres_exporter:9187']
+  #   scrape_interval: 30s
 
-  - job_name: 'redis-exporter'
-    static_configs:
-      - targets: ['taskflow_redis:6379']
-    scrape_interval: 30s
+  # - job_name: 'redis-exporter'
+  #   static_configs:
+  #     - targets: ['redis_exporter:9121']
+  #   scrape_interval: 30s
 
 alerting:
   alertmanagers:

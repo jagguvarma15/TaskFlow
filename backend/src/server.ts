@@ -40,7 +40,7 @@ export const db = knex({
 
 // Redis connection
 export const redis = createClient({
-  url: `redis://${process.env.REDIS_HOST || 'redis'}:${process.env.REDIS_PORT || 6379}`
+  url: `redis://:${process.env.REDIS_PASSWORD || 'redispass'}@${process.env.REDIS_HOST || 'redis'}:${process.env.REDIS_PORT || 6379}`
 });
 
 redis.on('error', (err) => logger.error('Redis Client Error', err));
