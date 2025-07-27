@@ -1,123 +1,106 @@
-version: '3.8'
-
 services:
-  # Database
+  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     container_name: taskflow_postgres
     environment:
       POSTGRES_DB: taskflow
-      POSTGRES_USER: taskuser
-      POSTGRES_PASSWORD: taskpass
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: taskflow_password
     ports:
       - "5433:5432"
-    networks:
-      - taskflow_network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U taskuser -d taskflow"]
+      test: ["CMD-SHELL", "pg_isready -U taskflow"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - taskflow_network
 
   # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: taskflow_redis
-    command: redis-server --appendonly yes --requirepass redispass
-    volumes:
-      - redis_data:/data
+    command: redis-server --requirepass redispass
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redispass", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - taskflow_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
 
   # Backend API
   backend:
     build:
       context: ./backend
       target: production
+    image: taskflow-backend
     container_name: taskflow_backend
+    ports:
+      - "3001:3001"
     environment:
-      - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_NAME=taskflow
-      - DB_USER=taskuser
-      - DB_PASSWORD=taskpass
-      - REDIS_HOST=redis
-      - REDIS_PASSWORD=redispass
-      - JWT_SECRET=your-super-secret-jwt-key
-      - FRONTEND_URL=http://localhost:3000
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: taskflow
+      DB_PASSWORD: taskflow_password
+      DB_NAME: taskflow
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redispass
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - taskflow_network
-    volumes:
-      - ./backend/logs:/app/logs
-    restart: unless-stopped
 
-  # Frontend
+  # Frontend React App
   frontend:
     build:
       context: ./frontend
       target: production
+    image: taskflow-frontend
     container_name: taskflow_frontend
-    environment:
-      - REACT_APP_API_URL=http://localhost:3001/api
-    depends_on:
-      - backend
     ports:
       - "3000:80"
+    depends_on:
+      - backend
     networks:
       - taskflow_network
-    restart: unless-stopped
 
-  # Development services
-  backend-dev:
-    build:
-      context: ./backend
-      target: development
-    container_name: taskflow_backend_dev
-    environment:
-      - NODE_ENV=development
-      - DB_HOST=postgres
-      - REDIS_HOST=redis
-    volumes:
-      - ./backend:/app:cached
-      - /app/node_modules
-    ports:
-      - "3002:3001"
-    networks:
-      - taskflow_network
-    profiles: ["dev"]
-
+  # Development profile - Frontend with hot reload
   frontend-dev:
+    profiles: ["dev"]
     build:
       context: ./frontend
       target: development
+    image: taskflow-frontend-dev
     container_name: taskflow_frontend_dev
-    environment:
-      - REACT_APP_API_URL=http://localhost:3002/api
-    volumes:
-      - ./frontend:/app:cached
-      - /app/node_modules
     ports:
-      - "3003:3000"
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    environment:
+      - WATCHPACK_POLLING=true
+    depends_on:
+      - backend
     networks:
       - taskflow_network
-    profiles: ["dev"]
 
 volumes:
   postgres_data:

@@ -15,7 +15,7 @@ scrape_configs:
   - job_name: 'taskflow-backend'
     static_configs:
       - targets: ['taskflow_backend:3001']
-    metrics_path: '/health'
+    metrics_path: '/metrics'
     scrape_interval: 30s
 
   - job_name: 'node-exporter'
