@@ -39,11 +39,13 @@ jobs:
     - name: Install frontend dependencies
       working-directory: ./frontend
       run: |
-        if [ -f package-lock.json ]; then
-          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
-        else
-          npm install --legacy-peer-deps
-        fi
+        # Clean install to avoid dependency conflicts
+        rm -rf node_modules package-lock.json
+        npm cache clean --force
+        
+        # Force specific ajv version to resolve conflicts
+        npm install ajv@^8.0.0 --save-dev --legacy-peer-deps
+        npm install --legacy-peer-deps
 
     - name: Run frontend linting
       working-directory: ./frontend
