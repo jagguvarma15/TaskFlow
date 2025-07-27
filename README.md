@@ -82,15 +82,17 @@ curl http://localhost:3001/metrics
 
 ### TaskFlow Frontend Interface
 
-[Frontend screenshot placeholder - AI-powered task management interface]
+<img width="1574" height="880" alt="TaskFlow_Dashboard" src="https://github.com/user-attachments/assets/bb49fae0-5fbf-40b7-b779-b5ac8d79c843" />
+
 
 ### Grafana Dashboard
 
-[Grafana screenshot placeholder - Monitoring dashboards and metrics visualization]
+<img width="1568" height="887" alt="Grafana_metrics_alerting" src="https://github.com/user-attachments/assets/21d8918d-2bd0-4075-b43e-3ce9c8f3967a" />
+
 
 ### Prometheus Targets
 
-[Prometheus screenshot placeholder - Service discovery and metrics targets]
+<img width="1568" height="778" alt="Prometheus_status" src="https://github.com/user-attachments/assets/cd306ac2-b191-4db3-8b19-e804aca90d92" />
 
 ## Container Architecture
 
@@ -184,6 +186,7 @@ docker exec taskflow_redis redis-cli -a redispass info
    - Node Exporter: Dashboard ID 1860
    - Docker Containers: Dashboard ID 193
    - Custom TaskFlow metrics: Create new dashboard
+   
 
 ### Prometheus Queries
 
